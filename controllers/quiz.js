@@ -153,3 +153,59 @@ exports.check = (req, res, next) => {
         answer
     });
 };
+
+exports.randomplay = (req, res, next) => {
+
+    req.session.randomPlay = req.session.randomPlay || [];
+    const op = Sequelize.Op;
+    const whereOp = {id: {[op.notIn]: req.session.randomPlay}}; //Ids que no estén en session.randomPlay
+
+    models.quiz.count({where:whereOp})
+    .then(count => {
+        if(count===0){  //todos los ids estan en session.randomPlay, ya se han jugado
+            const score = req.session.randomPlay.length;
+            req.session.randomPlay = []; //vaciamos para la siguiente vez comenzar el juego de 0.
+            res.render('quizzes/random_none',{
+                score
+            });
+        }
+        return models.quiz.findAll({    //Buscamos un quizz aleatoriamente que no esté en session.Play
+            where: whereOp,
+            offset: Math.floor(count*Math.random()),
+            limit: 1
+        })
+        .then(quizzes => {
+            return quizzes[0];
+        });
+    })
+    .then(quiz =>{                      //Este quizz lo pasamos junto a la puntuacion que llevamos a la vista random_play.ejs
+        const score = req.session.randomPlay.length;
+        res.render('quizzes/random_play',{
+            quiz,
+            score
+        });
+    })
+    .catch(error => {
+        next(error);
+    });
+};
+
+// GET + /quizzes/randomcheck/:quizId?answer=respuesta
+exports.randomcheck = (req,res,next) => {
+    
+    const {quiz, query} = req;
+    const answer = query.answer || "";
+    const result = answer.toLowerCase().trim() === quiz.answer.toLowerCase().trim();
+    const score = req.session.randomPlay.length + result; 
+    req.session.randomPlay.push(quiz.id);  //añadimos el id de la que hemos resuelto al array de ids resueltos
+    
+    if(!result){
+        req.session.randomPlay = [];    //Como hemos fallado ponemos a 0 el array donde guardabamos los ids de las acertadas
+    }
+
+    res.render('quizzes/random_result', {
+        answer,
+        result,
+        score
+    });
+};
