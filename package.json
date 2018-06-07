@@ -1,12 +1,11 @@
 {
-  "name": "quiz-2018",
-  "version": "0.0.0",
+  "name": "P6_Quiz",
+  "version": "2.0.0",
   "private": true,
   "scripts": {
-   "start": "node ./bin/www",
-    "start_heroku": "heroku local:start",
+    "start": "node ./bin/www",
     "super": "supervisor ./bin/www",
-    "start_old": "node ./bin/www"
+    "start_old": "node $NODE_DEBUG_OPTION ./bin/www"
   },
   "engines": {
     "node": "8.9.1",
